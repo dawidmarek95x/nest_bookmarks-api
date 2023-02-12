@@ -5,7 +5,7 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { AppModule } from '../src/app.module';
 import { AuthDto } from '../src/auth/dto';
 import { EditUserDto } from '../src/user/dto';
-import { CreateBookmarkDto } from '../src/bookmark/dto';
+import { CreateBookmarkDto, EditBookmarkDto } from '../src/bookmark/dto';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -25,7 +25,7 @@ describe('App e2e', () => {
     await app.listen(3333);
 
     prisma = app.get(PrismaService);
-    await prisma.cleanCb();
+    await prisma.cleanDb();
     pactum.request.setBaseUrl('http://localhost:3333');
   });
 
@@ -162,7 +162,7 @@ describe('App e2e', () => {
     describe('Create bookmark', () => {
       it('Should create bookmark', () => {
         const dto: CreateBookmarkDto = {
-          title: 'NestJS',
+          title: 'Nest.js',
           description:
             'NestJS is a framework for building efficient, scalable Node.js server-side applications.',
           link: 'https://docs.nestjs.com/',
@@ -175,24 +175,83 @@ describe('App e2e', () => {
           .withHeaders({
             Authorization: 'Bearer $S{userAt}',
           })
-          .expectStatus(201);
+          .expectStatus(201)
+          .stores('bookmarkId', 'id');
       });
     });
 
     describe('Get bookmarks', () => {
-      it.todo('Should get bookmarks data');
+      it('Should get bookmarks data', () => {
+        return pactum
+          .spec()
+          .get('/bookmarks')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(200)
+          .expectJsonLength(1);
+      });
     });
 
     describe('Get bookmark by id', () => {
-      it.todo('Should get bookmark data');
+      it('Should get bookmark data by id', () => {
+        return pactum
+          .spec()
+          .get('/bookmarks/{id}')
+          .withPathParams('id', '$S{bookmarkId}')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(200)
+          .expectBodyContains('$S{bookmarkId}');
+      });
     });
 
     describe('Edit bookmark', () => {
-      it.todo('Should edit bookmark data');
+      it('Should edit bookmark data', () => {
+        const dto: EditBookmarkDto = {
+          title: 'NestJS',
+          description:
+            'NestJS is a framework for building efficient, scalable Node.js server-side applications.',
+          link: 'https://docs.nestjs.com/',
+        };
+
+        return pactum
+          .spec()
+          .patch('/bookmarks/{id}')
+          .withPathParams('id', '$S{bookmarkId}')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .withBody(dto)
+          .expectStatus(200)
+          .expectBodyContains(dto.title)
+          .expectBodyContains(dto.description);
+      });
     });
 
-    describe('Delete bookmark', () => {
-      it.todo('Should delete bookmark data');
+    describe('Delete bookmark by id', () => {
+      it('Should delete bookmark', () => {
+        return pactum
+          .spec()
+          .delete('/bookmarks/{id}')
+          .withPathParams('id', '$S{bookmarkId}')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(204);
+      });
+
+      it('Should get empty bookmarks', () => {
+        return pactum
+          .spec()
+          .get('/bookmarks')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(200)
+          .expectJsonLength(0);
+      });
     });
   });
 });
