@@ -4,7 +4,8 @@ import * as pactum from 'pactum';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { AppModule } from '../src/app.module';
 import { AuthDto } from '../src/auth/dto';
-import { EditUserDto } from 'src/user/dto';
+import { EditUserDto } from '../src/user/dto';
+import { CreateBookmarkDto } from '../src/bookmark/dto';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -48,8 +49,7 @@ describe('App e2e', () => {
           .withBody({
             password: dto.password,
           })
-          .expectStatus(400)
-          .inspect();
+          .expectStatus(400);
       });
 
       it('Should throw if password empty', () => {
@@ -59,8 +59,7 @@ describe('App e2e', () => {
           .withBody({
             email: dto.email,
           })
-          .expectStatus(400)
-          .inspect();
+          .expectStatus(400);
       });
 
       it('Should throw if no body provided', () => {
@@ -72,8 +71,7 @@ describe('App e2e', () => {
           .spec()
           .post('/auth/signup')
           .withBody(dto)
-          .expectStatus(201)
-          .inspect();
+          .expectStatus(201);
       });
     });
 
@@ -85,8 +83,7 @@ describe('App e2e', () => {
           .withBody({
             password: dto.password,
           })
-          .expectStatus(400)
-          .inspect();
+          .expectStatus(400);
       });
 
       it('Should throw if password empty', () => {
@@ -96,12 +93,11 @@ describe('App e2e', () => {
           .withBody({
             email: dto.email,
           })
-          .expectStatus(400)
-          .inspect();
+          .expectStatus(400);
       });
 
       it('Should throw if no body provided', () => {
-        return pactum.spec().post('/auth/signup').expectStatus(400).inspect();
+        return pactum.spec().post('/auth/signup').expectStatus(400);
       });
 
       it('Should signin', () => {
@@ -150,8 +146,37 @@ describe('App e2e', () => {
   });
 
   describe('Bookmarks', () => {
-    describe('Create bookmarks', () => {
-      it.todo('Should create bookmark');
+    describe('Get empty bookmark', () => {
+      it('Should get empty bookmarks data', () => {
+        return pactum
+          .spec()
+          .get('/bookmarks')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(200)
+          .expectBody([]);
+      });
+    });
+
+    describe('Create bookmark', () => {
+      it('Should create bookmark', () => {
+        const dto: CreateBookmarkDto = {
+          title: 'NestJS',
+          description:
+            'NestJS is a framework for building efficient, scalable Node.js server-side applications.',
+          link: 'https://docs.nestjs.com/',
+        };
+
+        return pactum
+          .spec()
+          .post('/bookmarks')
+          .withBody(dto)
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(201);
+      });
     });
 
     describe('Get bookmarks', () => {
